@@ -242,13 +242,14 @@ if ($AllowedDomain) {
 }
 
 if (-not $SkipConsoleBuild) {
+    $Npm = if ($OnWindows) { 'npm.cmd' } else { 'npm' }
     Push-Location (Join-Path $Root 'apps\dashboard')
     try {
         if (-not (Test-Path 'node_modules')) {
-            & npm.cmd ci
+            & $Npm ci
             if ($LASTEXITCODE -ne 0) { throw 'npm ci failed' }
         }
-        & npm.cmd run build
+        & $Npm run build
         if ($LASTEXITCODE -ne 0) { throw 'Console build failed' }
     } finally {
         Pop-Location

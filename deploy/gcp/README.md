@@ -37,6 +37,32 @@ and you pay for it continuously. Delete everything when the demo is over (see
 3. [Google Cloud CLI](https://cloud.google.com/sdk/docs/install), recent enough to support
    `gcloud run deploy --iap` (`gcloud components update`), and Node.js/npm to build the console.
 
+### Personal Google account (project without an organization)
+
+A project created with a personal Gmail account has no organization. Leave out `-AllowedDomain`
+(and `-GrantDomainAccess` / `-DefaultAnalyst`) and map your own address with `-AdminEmail`. Google
+cannot create the IAP OAuth client from the command line in such projects, so `--iap` may warn
+that the first IAP setup must happen in the console. If the service is not protected afterwards
+(`Iap Enabled` is not `true`), open **Cloud Run → hades-mirage → Security → Require
+authentication → Identity-Aware Proxy** and save. If the console asks for an OAuth consent screen,
+choose **External** and add your Gmail address as a test user. Then run `deploy.ps1` again with the
+same parameters; it is safe to re-run. See Google's
+[Configure IAP for Cloud Run](https://cloud.google.com/run/docs/securing/identity-aware-proxy-cloud-run)
+guide, including access for users outside an organization.
+
+### Cloud Shell (no local install)
+
+Cloud Shell already has `gcloud`, Node.js and the .NET SDK. Install PowerShell as a .NET tool, then
+run the same script (it uses `npm` on Linux):
+
+```bash
+git clone https://github.com/Debsasish/hadesmirage.git && cd hadesmirage
+dotnet tool install --global PowerShell
+~/.dotnet/tools/pwsh ./deploy/gcp/deploy.ps1 -ProjectId PROJECT -AdminEmail you@gmail.com -ApproveModelEgress
+```
+
+The console build needs Node.js 22.13 or newer; run `nvm install 22` first if `node --version` is older.
+
 ## Deploy (Windows PowerShell)
 
 ```powershell
