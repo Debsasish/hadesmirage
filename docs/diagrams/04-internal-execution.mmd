@@ -1,0 +1,28 @@
+sequenceDiagram
+  participant A as Agent
+  participant E as Enforcement API
+  participant DB as Shared authoritative store
+  participant B as Signed HTTP backend
+  participant L as Independent ledger
+  A->>E: Typed operation and idempotency key
+  E->>DB: Verify identity, tenant, current lineage
+  E->>DB: Acquire shared transaction fence
+  E->>DB: Read current route and active policy
+  E->>E: Explicit deny precedes scoped allow
+  alt Sensitive approved operation
+    E->>DB: Check exact digest, expiry, separate reviewer
+    E->>DB: Consume approval and reserve stable execution
+  else Prohibited or approval missing
+    E->>DB: Record denial or review-required event
+    E-->>A: Deny before backend effect
+  end
+  opt Authorized dispatch
+    E->>B: Fixed handler with request-bound HMAC
+    B->>L: Independent tenant, schema and execution dedupe
+    L-->>B: Durable synthetic effect/result
+    B-->>E: Success or ambiguous network outcome
+    E->>DB: Execution state, audit and durable outbox
+    E->>DB: Commit and release fence
+    E-->>A: Actual recorded state, never invented success
+  end
+  Note over DB,L: Separate transactions with stable backend IDs and reconciliation for ambiguity

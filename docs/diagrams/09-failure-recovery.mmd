@@ -1,0 +1,18 @@
+flowchart TD
+  R["Protected request"] --> DB{"Authoritative identity, policy and route available?"}
+  DB -->|"No"| DENY["Reject; no ambiguous production dispatch"]
+  DB -->|"Yes"| P{"Deterministic operation authorized?"}
+  P -->|"No"| DENY
+  P -->|"Yes"| E["Fenced fixed backend dispatch"]
+  E --> O{"Outcome known?"}
+  O -->|"No"| U["Persist UNKNOWN; keep approval consumed"]
+  U --> Q["Analyst reconciliation retrieves existing backend result"]
+  O -->|"Yes"| A["Audit actual effect"]
+  D["Decoy request"] --> V{"Verified capability boundary and budget?"}
+  V -->|"No"| T["Restrict or terminate; never production fallback"]
+  V -->|"Yes"| S["Bounded synthetic response"]
+  M["Model failure"] --> F["Explanation unavailable or explicit static wording fallback"]
+  F --> SAME["Authorization and route remain deterministic"]
+  K["Kill switch"] --> T
+  style DENY fill:#3c2432,stroke:#f68c98,color:#e4ebf5
+  style T fill:#2c2445,stroke:#bc9ef3,color:#e4ebf5

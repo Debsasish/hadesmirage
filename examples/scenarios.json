@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0",
+  "status": "test-specifications-not-executed",
+  "scenarios": [
+    {
+      "id": "normal-read",
+      "test_ids": [
+        "T-02"
+      ],
+      "actor": "internal-agent",
+      "steps": [
+        "Invoke supplier.lookup for supplier:demo-001 with verified tenant-demo identity"
+      ],
+      "expected": [
+        "allow",
+        "one production read",
+        "no decoy assignment"
+      ]
+    },
+    {
+      "id": "blocked-mutation",
+      "test_ids": [
+        "T-03",
+        "T-05"
+      ],
+      "actor": "internal-agent",
+      "steps": [
+        "Request payment.change_request without approval",
+        "Retry with a changed argument after approval"
+      ],
+      "expected": [
+        "require_approval then deny digest mismatch",
+        "zero backend mutations"
+      ]
+    },
+    {
+      "id": "external-diversion",
+      "test_ids": [
+        "T-11",
+        "T-12"
+      ],
+      "actor": "external-laboratory-client",
+      "steps": [
+        "Attempt a prohibited tool",
+        "Attempt three distinct denied resource enumerations within 60 seconds",
+        "Send a supported read after restriction and decoy readiness"
+      ],
+      "expected": [
+        "D-002 matches",
+        "restriction before next production dispatch",
+        "last read reaches synthetic decoy only"
+      ]
+    },
+    {
+      "id": "benign-quoted-injection",
+      "test_ids": [
+        "T-23"
+      ],
+      "actor": "legitimate-user",
+      "steps": [
+        "Ask an educational question quoting an injection phrase without invoking a prohibited tool"
+      ],
+      "expected": [
+        "monitor only",
+        "no automatic diversion"
+      ]
+    },
+    {
+      "id": "decoy-outage",
+      "test_ids": [
+        "T-22"
+      ],
+      "actor": "external-laboratory-client",
+      "steps": [
+        "Trigger eligible sequence",
+        "Make decoy unavailable before readiness"
+      ],
+      "expected": [
+        "production restricted",
+        "request rejected",
+        "no production fallback"
+      ]
+    },
+    {
+      "id": "internal-suspension",
+      "test_ids": [
+        "T-07",
+        "T-09"
+      ],
+      "actor": "compromised-internal-fixture",
+      "steps": [
+        "Attempt to delegate beyond parent scope",
+        "Attempt direct connection to disallowed backend"
+      ],
+      "expected": [
+        "delegation denied",
+        "direct connection blocked in P3",
+        "no silent employee deception"
+      ]
+    }
+  ]
+}

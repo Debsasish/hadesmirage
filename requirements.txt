@@ -1,0 +1,4 @@
+# Cloud Run source deploy (Google Cloud buildpacks) installs from this file.
+# The exact, reviewed pins live in requirements.lock; do not add unpinned packages here.
+# No Dockerfile is used: Cloud Build builds the image remotely with buildpacks.
+-r requirements.lock

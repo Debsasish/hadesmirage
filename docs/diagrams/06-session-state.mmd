@@ -1,0 +1,12 @@
+stateDiagram-v2
+  [*] --> PRODUCTION
+  PRODUCTION --> RESTRICTED: Corroborated deterministic rule or analyst
+  PRODUCTION --> TERMINATED: TTL or identity suspension
+  RESTRICTED --> DECOY_PENDING: Eligible external nontransactional session
+  RESTRICTED --> TERMINATED: Operator or expiry
+  DECOY_PENDING --> DECOY: Verified template and atomic pin
+  DECOY_PENDING --> TERMINATED: Failure or stop
+  DECOY --> TERMINATED: TTL, budget, failure or kill switch
+  TERMINATED --> [*]
+  note right of RESTRICTED: Missing readiness stays denied
+  note right of DECOY: No DECOY to PRODUCTION transition

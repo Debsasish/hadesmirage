@@ -1,0 +1,23 @@
+sequenceDiagram
+  participant C as External lab session
+  participant I as Controlled ingress
+  participant S as Rules and shared store
+  participant D as No-import Wasm decoy
+  participant B as Synthetic production-like backend
+  C->>I: Prohibited tool and distinct denied probes
+  I-->>C: Deny each prohibited request
+  I->>S: Authenticated observations and outbox
+  S->>S: Corroborate D-002 or D-006
+  S->>S: Fence production dispatch and RESTRICT
+  alt Eligible and verified template
+    S->>S: DECOY_PENDING, isolated synthetic assignment
+    S->>S: Commit DECOY route and version
+    C->>I: Next supported nontransactional request
+    I->>D: Synthetic operation only
+    D-->>I: Simulated result
+    I-->>C: Bounded synthetic response
+  else Missing readiness, policy or budget
+    I-->>C: Remain restricted or deny
+  end
+  Note over I,B: No production dispatch after acknowledged route fence
+  Note over S,D: No automatic return to production

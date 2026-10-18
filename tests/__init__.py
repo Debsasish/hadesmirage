@@ -1,0 +1,1 @@
+"""Native synthetic acceptance suite."""

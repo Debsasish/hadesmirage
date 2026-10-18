@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.hades-mirage.invalid/v1/tool-invocation.schema.json",
+  "title": "tool-invocation.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tool",
+    "action",
+    "resource",
+    "arguments",
+    "session_id"
+  ],
+  "properties": {
+    "tool": {
+      "enum": [
+        "supplier.lookup",
+        "invoice.compare",
+        "payment.change_request",
+        "customer.export",
+        "infrastructure.delete"
+      ]
+    },
+    "action": {
+      "enum": [
+        "read",
+        "analyze",
+        "propose_change",
+        "export",
+        "delete"
+      ]
+    },
+    "resource": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "arguments": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "supplier_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "invoice_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "proposed_account_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      }
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "approval_id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}

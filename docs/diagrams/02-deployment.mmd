@@ -1,0 +1,15 @@
+flowchart TB
+  subgraph H["Windows host - P1-native"]
+    UI["Browser - local React assets"] -->|"127.0.0.1:8787"| API["FastAPI control and enforcement process"]
+    API --> DB["Authoritative SQLite WAL"]
+    API --> W["In-process durable worker"]
+    W --> DB
+    API -->|"Request-bound HMAC HTTP"| BACK["127.0.0.1:8788 synthetic backend process"]
+    BACK --> LEDGER["Separate backend SQLite ledger"]
+    API --> WASM["Wasmtime module - no imports or WASI"]
+    API --> FIX["Fixture investigator - default"]
+    API -.->|"Explicit optional configuration"| GEM["Gemini provider outside Wasm"]
+  end
+  P3["Separate native TLS gateway and registry - NOT RUN"] -.-> BACK
+  P2["Cloud Run and managed state - NOT DEPLOYED"] -.-> API
+  style WASM fill:#2c2445,stroke:#bc9ef3,color:#e4ebf5

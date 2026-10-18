@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "policy_id": "procurement-demo",
+  "version": "policy-demo-v1",
+  "default_effect": "deny",
+  "rules": [
+    {
+      "id": "read-supplier",
+      "effect": "allow",
+      "principal_ids": [
+        "agent-procurement"
+      ],
+      "tool": "supplier.lookup",
+      "actions": [
+        "read"
+      ],
+      "resource_prefix": "supplier:demo-",
+      "approval_required": false
+    },
+    {
+      "id": "compare-invoice",
+      "effect": "allow",
+      "principal_ids": [
+        "agent-procurement"
+      ],
+      "tool": "invoice.compare",
+      "actions": [
+        "analyze"
+      ],
+      "resource_prefix": "invoice:demo-",
+      "approval_required": false
+    },
+    {
+      "id": "propose-account-change",
+      "effect": "allow",
+      "principal_ids": [
+        "agent-procurement"
+      ],
+      "tool": "payment.change_request",
+      "actions": [
+        "propose_change"
+      ],
+      "resource_prefix": "supplier:demo-",
+      "approval_required": true
+    },
+    {
+      "id": "deny-export",
+      "effect": "deny",
+      "principal_ids": [
+        "agent-procurement"
+      ],
+      "tool": "customer.export",
+      "actions": [
+        "export"
+      ],
+      "resource_prefix": "customer:",
+      "approval_required": false
+    }
+  ]
+}

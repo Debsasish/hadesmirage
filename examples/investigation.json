@@ -1,0 +1,18 @@
+{
+  "case_id": "40000000-0000-4000-8000-000000000001",
+  "case_version": 1,
+  "summary": "A prohibited export was denied. This event alone does not establish malicious intent or justify diversion.",
+  "confidence": "low",
+  "claims": [
+    {
+      "text": "The dispatcher denied customer.export under policy-demo-v1.",
+      "evidence_event_ids": [
+        "20000000-0000-4000-8000-000000000001"
+      ]
+    }
+  ],
+  "alternative_explanations": [
+    "An integration may have requested an unsupported tool."
+  ],
+  "recommended_response": "review"
+}

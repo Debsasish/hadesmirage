@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.hades-mirage.invalid/v1/decision.schema.json",
+  "title": "decision.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_id",
+    "decision",
+    "reason_code",
+    "policy_version",
+    "evaluated_at",
+    "execution_state"
+  ],
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "decision": {
+      "enum": [
+        "allow",
+        "deny",
+        "require_approval"
+      ]
+    },
+    "reason_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "policy_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "execution_state": {
+      "enum": [
+        "not_started",
+        "reserved",
+        "succeeded",
+        "failed",
+        "unknown"
+      ]
+    },
+    "execution_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "result": {
+      "type": "object",
+      "maxProperties": 20,
+      "additionalProperties": true
+    }
+  }
+}

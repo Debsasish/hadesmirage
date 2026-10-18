@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.hades-mirage.invalid/v1/route-transition.schema.json",
+  "title": "route-transition.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "expected_route_version",
+    "reason_code",
+    "evidence_event_ids"
+  ],
+  "properties": {
+    "expected_route_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "reason_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "evidence_event_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "template_id": {
+      "enum": [
+        "supplier-portal-v1"
+      ]
+    }
+  }
+}

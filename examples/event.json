@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "event_id": "20000000-0000-4000-8000-000000000001",
+  "tenant_id": "tenant-demo",
+  "session_id": "10000000-0000-4000-8000-000000000001",
+  "source": "dispatcher",
+  "event_type": "authorization.decided",
+  "occurred_at": "2026-10-17T14:30:00Z",
+  "route_mode": "PRODUCTION",
+  "outcome": "deny",
+  "principal_id": "agent-procurement",
+  "trace_id": "trace-demo-001",
+  "attributes": {
+    "tool": "customer.export",
+    "action": "export",
+    "resource": "customer:demo-all",
+    "policy_version": "policy-demo-v1",
+    "reason_code": "NO_MATCHING_ALLOW"
+  }
+}

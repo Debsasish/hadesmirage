@@ -1,0 +1,10 @@
+flowchart TB
+  L7["L7 PRIMARY - application enforcement"] --> AUTH["Identity, tenant, tool, action and exact resource"]
+  L7 --> CASE["Behaviour, application-session route and synthetic responses"]
+  NET["L3 and L4 SUPPORTING - separate P3 gate"] -.-> DEST["Segmentation, destination IP and port, bypass prevention"]
+  TLS["TLS identity and encryption"] -.-> CERT["Native gateway certificate and exact key binding - unverified here"]
+  CERT --> NOTE["Destination connectivity is NOT tool authorization"]
+  SESSION["Application session state"] --> NOTL5["Not a Layer 5 appliance; no TCP session teleportation"]
+  SOC["SOC control plane"] --> APP["Application service, not a separate OSI layer"]
+  style L7 fill:#153b39,stroke:#79d7c4,color:#e4ebf5
+  style NET fill:#111d2d,stroke:#8294ae,color:#a3b2c8,stroke-dasharray:5 5

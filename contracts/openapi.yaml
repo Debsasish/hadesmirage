@@ -1,0 +1,281 @@
+openapi: 3.1.0
+info:
+  title: Hades Mirage initial API
+  version: 1.0.0
+  description: Implementation contract, not a deployed endpoint. Tenant and principal derive from verified transport identity.
+servers:
+  - url: https://mirage.example.invalid
+security:
+  - bearerAuth: []
+paths:
+  /v1/events:
+    post:
+      operationId: ingestEvent
+      description: Authenticated source/tenant-bound ingestion. Same ID and content is duplicate; differing content is conflict.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './event.schema.json'
+      responses:
+        '202':
+          description: Event accepted or identical duplicate acknowledged
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Invalid'
+  /v1/tools/invoke:
+    post:
+      operationId: invokeTool
+      description: Rechecks identity, tenant, scope, arguments, approval and route before side effects.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './tool-invocation.schema.json'
+      responses:
+        '200':
+          description: Authorized execution state; backend outcome may be unknown
+          content:
+            application/json:
+              schema:
+                $ref: './decision.schema.json'
+        '403':
+          description: Denied with no backend execution
+          content:
+            application/json:
+              schema:
+                $ref: './decision.schema.json'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '428':
+          description: Exact action approval required; no backend execution
+          content:
+            application/json:
+              schema:
+                $ref: './decision.schema.json'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /v1/approvals:
+    post:
+      operationId: requestApproval
+      description: Server computes digest over verified identity and canonical action. Does not execute the tool.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './tool-invocation.schema.json'
+      responses:
+        '201':
+          description: Pending approval with server-generated action digest and expiry
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [approval_id, digest, status, expires_at]
+                properties:
+                  approval_id: {type: string, format: uuid}
+                  digest: {type: string}
+                  status: {const: pending}
+                  expires_at: {type: string, format: date-time}
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/approvals/{approval_id}/decision:
+    parameters:
+      - name: approval_id
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    post:
+      operationId: decideApproval
+      description: Separate authorized reviewer only. Requester cannot approve own action.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [decision, expected_digest]
+              properties:
+                decision: {enum: [approve, reject]}
+                expected_digest: {type: string, minLength: 64, maxLength: 64}
+      responses:
+        '200': {description: Review decision recorded}
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/incidents:
+    get:
+      operationId: listIncidents
+      description: Tenant-scoped list. No client-controlled tenant selection.
+      parameters:
+        - name: cursor
+          in: query
+          schema: {type: string, maxLength: 512}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 25}
+      responses:
+        '200':
+          description: Redacted summaries and opaque continuation cursor
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/IncidentSummary'}
+                  next_cursor: {type: [string, 'null']}
+  /v1/incidents/{incident_id}:
+    parameters:
+      - name: incident_id
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      operationId: getIncident
+      responses:
+        '200':
+          description: Scoped redacted case and optional validated AI investigation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [incident, events]
+                properties:
+                  incident: {$ref: '#/components/schemas/IncidentSummary'}
+                  events:
+                    type: array
+                    items: {$ref: './event.schema.json'}
+                  investigation: {$ref: './investigation.schema.json'}
+        '404': {description: Not found or outside caller scope}
+  /v1/sessions/{session_id}/restrict:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      operationId: restrictSession
+      description: Authorized operator/service only. Establish dispatch barrier before acknowledging restriction.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        $ref: '#/components/requestBodies/Transition'
+      responses:
+        '200': {description: Restricted; versioned route state returned}
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /v1/sessions/{session_id}/engage:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      operationId: engageSession
+      description: Orchestrator-only. Must already be restricted. Checks corroboration, eligibility, isolation, readiness, budgets and route version.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        $ref: '#/components/requestBodies/Transition'
+      responses:
+        '202': {description: Engagement requested; pending or active state returned. Not proof of readiness.}
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /v1/sessions/{session_id}/terminate:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      operationId: terminateSession
+      description: Idempotent stop. Never restores production routing.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        $ref: '#/components/requestBodies/Transition'
+      responses:
+        '200': {description: Terminated; cleanup and supported connection closure scheduled}
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Verify issuer, audience, signature, expiry and caller role. Native gateway mTLS is a separate protocol boundary.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, minLength: 16, maxLength: 128}
+    SessionId:
+      name: session_id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+  requestBodies:
+    Transition:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: './route-transition.schema.json'}
+  schemas:
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message, request_id]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        request_id: {type: string}
+    IncidentSummary:
+      type: object
+      required: [incident_id, status, severity, evidence_event_ids]
+      properties:
+        incident_id: {type: string, format: uuid}
+        status: {enum: [open, investigating, contained, closed]}
+        severity: {enum: [informational, low, medium, high, critical]}
+        evidence_event_ids:
+          type: array
+          items: {type: string, format: uuid}
+  responses:
+    Forbidden:
+      description: Caller/action unauthorized; no protected execution
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Conflict:
+      description: Version or idempotency conflict
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Invalid:
+      description: Schema or semantic validation failed
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Unavailable:
+      description: Required safe dependency unavailable; no production fallback
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}

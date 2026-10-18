@@ -1,0 +1,15 @@
+{
+  "package": "hades-mirage-blueprint",
+  "version": "1.0",
+  "prepared_date": "2026-10-17",
+  "status": "design-and-contracts-not-implemented",
+  "source_archive": {
+    "name": "agent-gateway.zip",
+    "sha256": "5d3d39c7af5e9922db5db7a15a7b12611ddce282b68de7b3135f0aabae315b24"
+  },
+  "reviewed_hades_blobs": {
+    "README.md": "6dca36193efecf5ffa8ecccf2c9a059e4f016dfb",
+    "scripts/mcp_manifest_audit.py": "aed637957cbb1b669a3e4e9d990ef90bb84b755e"
+  },
+  "copied_upstream_source": false
+}

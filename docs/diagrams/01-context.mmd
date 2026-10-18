@@ -1,0 +1,15 @@
+flowchart LR
+  E["External lab client"] --> I["L7 ingress and session route"]
+  A["Internal agents"] --> T["Typed tool dispatcher"]
+  U["Analyst and separate approver"] --> S["SOC control API and console"]
+  I -->|"Authorized request"| T
+  T -->|"Signed loopback HTTP"| B["Independent synthetic backend"]
+  T -->|"Events and outbox"| S
+  I -->|"Observed evidence"| S
+  S -->|"Deterministic restriction"| R["Fenced decoy router"]
+  R --> D["No-import Wasm supplier decoy"]
+  S --> M["Advisory fixture or Gemini provider"]
+  T -.->|"Proposed P3 only"| G["Native CONNECT gateway"]
+  G -.->|"Unverified TCP path"| B
+  style D fill:#2c2445,stroke:#bc9ef3,color:#e4ebf5
+  style G fill:#111d2d,stroke:#8294ae,color:#a3b2c8,stroke-dasharray:5 5

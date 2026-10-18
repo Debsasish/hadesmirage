@@ -1,0 +1,34 @@
+{
+  "implementation_version": "0.1.0",
+  "blueprint_version": "1.0",
+  "reviewed_at": "2026-10-17",
+  "hades": {
+    "repository": "https://github.com/DebasishTripathy13/Hades-Blackwatch",
+    "commit": "bdeb181d7a998f88d2c9ccced9d35d4e76998072",
+    "license": "Apache-2.0",
+    "reviewed_blobs": {
+      "README.md": "6dca36193efecf5ffa8ecccf2c9a059e4f016dfb",
+      "scripts/mcp_manifest_audit.py": "aed637957cbb1b669a3e4e9d990ef90bb84b755e",
+      "LICENSE": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64"
+    },
+    "verified_scope": "Selected-source review; typed report ingestion adapter, not an active scanner",
+    "copied_source": false
+  },
+  "gateway": {
+    "artifact": "agent-gateway.zip",
+    "archive_sha256": "5d3d39c7af5e9922db5db7a15a7b12611ddce282b68de7b3135f0aabae315b24",
+    "package_version": "1.0.0",
+    "license": "MIT",
+    "copyright": "2026 Security Level 5",
+    "reviewed_files": ["README.md", "LICENSE", "Cargo.toml", "src/proxy.rs"],
+    "verified_scope": "Selected-source review only. No Rust build, registry, certificate or TCP bypass test",
+    "limitation": "CONNECT destination authorization; no tool inspection. Established tunnels are not reauthorized per byte.",
+    "copied_source": false
+  },
+  "profiles": {
+    "P1-native": "Native loopback application, independent signed HTTP synthetic backend, SQLite/WAL, no-import Wasmtime decoy",
+    "P2": "Deployment guidance only; not deployed",
+    "P3": "Native gateway integration unconfigured; not enforced",
+    "P4": "Enterprise pilot deferred"
+  }
+}

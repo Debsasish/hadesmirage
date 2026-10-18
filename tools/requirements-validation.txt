@@ -1,0 +1,3 @@
+# Documentation validation only; lock reviewed versions in the implementation repo.
+jsonschema>=4.18,<5
+PyYAML>=6,<7

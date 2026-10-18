@@ -1,0 +1,9 @@
+{
+  "tool": "supplier.lookup",
+  "action": "read",
+  "resource": "supplier:demo-001",
+  "arguments": {
+    "supplier_id": "demo-001"
+  },
+  "session_id": "10000000-0000-4000-8000-000000000001"
+}

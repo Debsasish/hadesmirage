@@ -1,0 +1,8 @@
+{
+  "decision_id": "30000000-0000-4000-8000-000000000001",
+  "decision": "deny",
+  "reason_code": "NO_MATCHING_ALLOW",
+  "policy_version": "policy-demo-v1",
+  "evaluated_at": "2026-10-17T14:30:00Z",
+  "execution_state": "not_started"
+}

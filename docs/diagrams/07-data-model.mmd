@@ -1,0 +1,40 @@
+erDiagram
+  TENANT ||--o{ PRINCIPAL : owns
+  PRINCIPAL ||--o{ SESSION : authenticates
+  PRINCIPAL ||--o{ CREDENTIAL : verifies
+  TENANT ||--o{ POLICY_VERSION : reviews
+  TENANT ||--o{ SEQUENCE_COUNTER : advances
+  SESSION ||--o{ EVENT : records
+  EVENT ||--|| OUTBOX : queues
+  SESSION ||--o| INCIDENT : correlates
+  INCIDENT ||--o{ INCIDENT_EVENT : cites
+  EVENT ||--o{ INCIDENT_EVENT : referenced
+  INCIDENT ||--o{ ANALYST_NOTE : explains
+  SESSION ||--o{ APPROVAL : binds
+  SESSION ||--o{ EXECUTION : fences
+  SESSION ||--o| DECOY : pins
+  TENANT ||--o{ AUDIT_LOG : retains
+  TENANT ||--o{ IDEMPOTENCY : deduplicates
+  EXECUTION ||--o| BACKEND_LEDGER : reconciles
+  TENANT {
+    string tenant_id PK
+  }
+  SESSION {
+    string tenant_id PK
+    string session_id PK
+    string route_mode
+    int route_version
+  }
+  APPROVAL {
+    string tenant_id PK
+    string approval_id PK
+    string action_digest
+    string policy_version
+    string status
+  }
+  DECOY {
+    string tenant_id PK
+    string decoy_id PK
+    string synthetic_state
+    int request_budget
+  }

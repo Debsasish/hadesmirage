@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.hades-mirage.invalid/v1/event.schema.json",
+  "title": "event.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "tenant_id",
+    "session_id",
+    "source",
+    "event_type",
+    "occurred_at",
+    "route_mode",
+    "outcome",
+    "attributes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "source": {
+      "enum": [
+        "edge",
+        "dispatcher",
+        "gateway",
+        "decoy_router",
+        "control"
+      ]
+    },
+    "event_type": {
+      "enum": [
+        "request.observed",
+        "authorization.decided",
+        "tool.completed",
+        "gateway.decided",
+        "decoy.observed",
+        "session.transitioned"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "route_mode": {
+      "enum": [
+        "PRODUCTION",
+        "RESTRICTED",
+        "DECOY_PENDING",
+        "DECOY",
+        "TERMINATED"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "observed",
+        "allow",
+        "deny",
+        "require_approval",
+        "success",
+        "failure",
+        "simulated"
+      ]
+    },
+    "principal_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "trace_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "attributes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tool": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "resource": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "destination": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "policy_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "reason_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "snippet": {
+          "type": "string",
+          "maxLength": 2048
+        }
+      },
+      "maxProperties": 7
+    }
+  }
+}

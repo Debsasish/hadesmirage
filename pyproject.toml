@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hades-mirage"
+version = "0.1.0"
+description = "A bounded, native-local agent guardrail and deception laboratory"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi==0.143.3",
+  "uvicorn>=0.35,<1",
+  "sqlalchemy==2.0.55",
+  "pydantic-settings==2.16.0",
+  "httpx>=0.28,<1",
+  "wasmtime==49.0.0",
+  "google-genai==2.31.0",
+  "psycopg[binary]>=3.2,<4",
+  "jsonschema>=4.25,<5",
+  "PyYAML>=6,<7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.4,<10", "pytest-cov>=6,<8", "ruff>=0.13,<1"]
+
+[project.scripts]
+mirage = "mirage.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["mirage*"]
+
+[tool.setuptools.package-data]
+mirage = ["resources/*.wat", "resources/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+  "postgres: requires an explicit isolated PostgreSQL test database",
+  "live_ai: five paid synthetic-data calls; requires --live-ai and an approved live-call limit",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]

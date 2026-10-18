@@ -1,0 +1,29 @@
+{
+  "tools": [
+    {
+      "name": "supplier.lookup",
+      "description": "Read an allowlisted synthetic supplier. Exact tenant and resource scope are enforced outside the model.",
+      "inputSchema": {"type":"object","additionalProperties":false,"required":["supplier_id"],"properties":{"supplier_id":{"type":"string","enum":["demo-001","demo-002"]}}}
+    },
+    {
+      "name": "invoice.compare",
+      "description": "Read-only comparison of an allowlisted synthetic invoice.",
+      "inputSchema": {"type":"object","additionalProperties":false,"required":["invoice_id"],"properties":{"invoice_id":{"type":"string","enum":["demo-001","demo-002"]}}}
+    },
+    {
+      "name": "payment.change_request",
+      "description": "Propose a synthetic account change. One-time exact request approval is required before any backend write.",
+      "inputSchema": {"type":"object","additionalProperties":false,"properties":{"proposed_account_ref":{"type":"string","pattern":"^synthetic-account-"}}}
+    },
+    {
+      "name": "customer.export",
+      "description": "Prohibited customer export. No MVP permission or arbitrary data access.",
+      "inputSchema": {"type":"object","additionalProperties":false,"properties":{}}
+    },
+    {
+      "name": "infrastructure.delete",
+      "description": "Prohibited administrative delete operation. Approval language is not an authorization control.",
+      "inputSchema": {"type":"object","additionalProperties":false,"properties":{}}
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+name: P1 native gates (no Docker)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout without persisting credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/dashboard/package-lock.json
+      - name: Install locked dependencies and build the native console
+        shell: pwsh
+        run: .\setup.cmd
+      - name: Install browser runtime
+        working-directory: apps/dashboard
+        shell: pwsh
+        run: npx.cmd playwright install chromium
+      - name: Run scoped native gates
+        shell: pwsh
+        run: .\verify.cmd
+      - name: Check production npm advisories
+        working-directory: apps/dashboard
+        shell: pwsh
+        run: npm.cmd audit --omit=dev --audit-level=high
+      - name: Query public PyPI advisory matches
+        shell: pwsh
+        run: .\.venv\Scripts\python.exe tools\audit_dependencies.py

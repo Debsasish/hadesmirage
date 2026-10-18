@@ -1,0 +1,23 @@
+flowchart LR
+  subgraph UN["Untrusted"]
+    TEXT["Prompts, snippets, model and report text"]
+    CALLER["Caller headers and arguments"]
+  end
+  subgraph TRUST["Trusted application authority"]
+    AUTH["Verified credential context"]
+    POLICY["Typed deterministic policy"]
+    ROUTE["Shared dispatch fence and route"]
+    BROKER["Synthetic-only wording broker"]
+  end
+  subgraph CAP["Wasm capability boundary"]
+    D["Fixed supplier emulator"]
+    MEM["64 KiB memory and bounded fuel"]
+    D --- MEM
+  end
+  CALLER --> AUTH --> POLICY --> ROUTE
+  TEXT -->|"Bounded inert evidence only"| POLICY
+  ROUTE -->|"Numeric operation and synthetic state"| D
+  D -->|"Bounded untrusted response bytes"| BROKER
+  DENY["No sockets, DNS, files, environment, process API or provider identity"]
+  D --- DENY
+  style CAP fill:#221d35,stroke:#bc9ef3,color:#e4ebf5
