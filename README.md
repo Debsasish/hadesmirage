@@ -1,5 +1,9 @@
 # Hades Mirage
 
+Layer-7 security for AI agents: catch rogue agents, divert them into an isolated honeypot, and explain every case in plain words with Google Gemini.
+
+![How Hades Mirage handles an attacking AI agent, from the front door to the honeypot](docs/images/attack-journey.png)
+
 **Runnable native Windows laboratory, with a React/TypeScript analyst console and FastAPI enforcement backend. No Docker is used.** The original blueprint follows below and remains the design baseline, not a claim that every deployment profile is complete.
 
 ```powershell
@@ -22,6 +26,48 @@ AI workflows now include evidence-cited case investigation and questions, metada
 **Validated scope: P1-native / SQLite-WAL / deterministic fixture provider.** Wasm capability isolation is not an OS firewall or native Rust gateway test. PostgreSQL configuration, the Gemini SDK adapter and foundation report adapters are present; live PostgreSQL, Gemini, P2 cloud deployment and P3 gateway enforcement require their separate acceptance gates. This is not production-ready.
 
 Start with [native setup and operations](docs/native-setup.md), [implemented architecture](docs/implemented-architecture.md), [verification results](docs/implementation-results.md), [source attribution](docs/implementation-attribution.md) and [runtime API](contracts/runtime-openapi.json). Editable diagrams and rendered SVGs are in [the diagram index](docs/diagrams/README.md).
+
+## Architecture
+
+![Hades Mirage solution architecture: Layer-7 ingress and tool enforcement, isolated deception zone and SOC control plane](docs/images/architecture.png)
+
+External users, bots and agents enter through the Layer-7 ingress, which authenticates, authorizes and routes each request to the protected application, a rejection or (for eligible restricted sessions) the isolated synthetic honeypot. Internal agents pass Layer-7 tool and resource enforcement before the existing gateway checks identity and destination permissions. Every component sends authenticated events to the SOC control plane, where deterministic rules decide and Gemini only explains. Layer 3/4 isolation keeps production, SOC and deception in separate segments; the honeypot has no route to production.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/osi-placement.png" alt="Control placement by OSI layer"><br><sub><b>Where it sits.</b> Layer 7 is primary; Layers 3/4 and TLS support it.</sub></td>
+    <td width="50%"><img src="docs/images/session-states.png" alt="One-way session route states"><br><sub><b>Session states.</b> Restrict before diversion; nothing returns a session to production.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/gemini-pipeline.png" alt="Deterministic enforcement path and advisory Gemini path"><br><sub><b>Google Gemini.</b> A separate advisory path with schema-validated, evidence-cited output.</sub></td>
+    <td width="50%"><img src="docs/images/gcp-deployment.png" alt="Google Cloud deployment blueprint"><br><sub><b>Google Cloud.</b> Cloud Run behind IAP with Vertex AI and Secret Manager (scripted, not yet deployed).</sub></td>
+  </tr>
+</table>
+
+The full write-up is the [solution blueprint (Word)](docs/Hades-Mirage-Solution-Blueprint.docx), also available as a [PDF](docs/Hades-Mirage-Solution-Blueprint.pdf).
+
+## Screenshots
+
+Captured from the running P1-native console with synthetic data; AI answers are live Gemini (`gemini-2.5-flash`).
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/screen-overview.png" alt="Risk overview"><br><sub><b>Risk overview.</b> Open issues, issue age, containment and AI help at a glance.</sub></td>
+    <td width="50%"><img src="docs/images/screen-attack-map.png" alt="Live attack map"><br><sub><b>Live attack map.</b> Who sent requests, what the rules decided and where attackers ended up.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/screen-attack-path.png" alt="Attack path replay"><br><sub><b>Path replay.</b> One outside agent's route into the honeypot, with its linked issue.</sub></td>
+    <td width="50%"><img src="docs/images/screen-issue-plain.png" alt="Issue drawer in plain view"><br><sub><b>Plain view.</b> What happened, in everyday language, and that no real data was touched.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/screen-issue-technical.png" alt="Issue drawer in technical view"><br><sub><b>Technical view.</b> Rules, route state, denied decisions and the raw event timeline.</sub></td>
+    <td width="50%"><img src="docs/images/screen-ai-chat.png" alt="Ask Mirage AI answering with live Gemini"><br><sub><b>Ask Mirage AI.</b> Live Gemini answers with links to the issues it cites.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/screen-settings.png" alt="Settings with the live Gemini check passed"><br><sub><b>Settings.</b> Portal-configured Gemini model and safeguards; live check passed.</sub></td>
+    <td width="50%"><img src="docs/images/screen-telegram.png" alt="Telegram approvals and alerts"><br><sub><b>Telegram approvals.</b> Admin-approved people and roles (blocked on this lab network).</sub></td>
+  </tr>
+</table>
 
 ## Verification commands
 

@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hades Mirage blueprint diagrams</title>
+<style>
+  body { margin: 0; padding: 24px; background: #e2e8f0; font-family: "Segoe UI", system-ui, sans-serif; }
+  figure { margin: 0 0 32px; display: block; width: max-content; background: #ffffff; }
+  svg { display: block; font-family: "Segoe UI", system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<figure id="fig-architecture"></figure>
+<figure id="fig-osi"></figure>
+<figure id="fig-journey"></figure>
+<figure id="fig-states"></figure>
+<figure id="fig-ai"></figure>
+<figure id="fig-gcp"></figure>
+<script>
+const TONES = {
+  gray: { accent: "#64748b", tint: "#f8fafc", stroke: "#cbd5e1" },
+  blue: { accent: "#2563eb", tint: "#eff6ff", stroke: "#bfdbfe" },
+  green: { accent: "#059669", tint: "#ecfdf5", stroke: "#a7f3d0" },
+  red: { accent: "#dc2626", tint: "#fef2f2", stroke: "#fecaca" },
+  amber: { accent: "#d97706", tint: "#fffbeb", stroke: "#fcd34d" },
+  violet: { accent: "#7c3aed", tint: "#f5f3ff", stroke: "#c4b5fd" },
+  teal: { accent: "#0d9488", tint: "#f0fdfa", stroke: "#99f6e4" },
+  navy: { accent: "#0f172a", tint: "#0f172a", stroke: "#0f172a" },
+};
+const measure = document.createElement("canvas").getContext("2d");
+function width(text, size, weight = 400, mono = false) {
+  measure.font = `${weight} ${size}px ${mono ? "Consolas, monospace" : '"Segoe UI", system-ui, sans-serif'}`;
+  return measure.measureText(text).width;
+}
+const esc = (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+function text(content, x, y, { size = 14, weight = 400, color = "#0f172a", anchor = "start", mono = false, spacing = 0, lh = 18 } = {}) {
+  return String(content).split("\n").map((line, index) =>
+    `<text x="${x}" y="${y + index * lh}" font-size="${size}" font-weight="${weight}" fill="${color}" text-anchor="${anchor}"` +
+    `${mono ? ' font-family="Consolas, Cascadia Mono, monospace"' : ""}${spacing ? ` letter-spacing="${spacing}"` : ""}>${esc(line)}</text>`
+  ).join("");
+}
+
+function node(n) {
+  const tone = TONES[n.tone || "gray"];
+  const { x, y, w, h } = n;
+  const titleLines = n.title.split("\n").length;
+  const subLines = n.sub ? n.sub.split("\n").length : 0;
+  const block = 16 + (titleLines - 1) * 21 + (subLines ? 21 + (subLines - 1) * 18 : 0) + (n.tech ? 20 : 0) + 4;
+  let baseline = y + (h - block) / 2 + 16;
+  let svg = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="${n.filled ? tone.tint : "#ffffff"}" stroke="${tone.stroke}" stroke-width="1.6"${n.dashed ? ' stroke-dasharray="7 5"' : ""} filter="url(#shadow)"/>`;
+  svg += `<rect x="${x + 1}" y="${y + 14}" width="5" height="${h - 28}" rx="2.5" fill="${tone.accent}"/>`;
+  const left = x + 20;
+  svg += text(n.title, left, baseline, { size: 16.5, weight: 650, lh: 21 });
+  baseline += (titleLines - 1) * 21 + 21;
+  if (n.sub) {
+    svg += text(n.sub, left, baseline, { size: 13.5, color: "#475569", lh: 18 });
+    baseline += (subLines - 1) * 18 + 20;
+  }
+  if (n.tech) svg += text(n.tech, left, baseline, { size: 12.5, color: tone.accent, mono: true });
+  if (n.badge) {
+    svg += `<circle cx="${x + w - 22}" cy="${y + 22}" r="13" fill="${tone.accent}"/>`;
+    svg += text(n.badge, x + w - 22, y + 27, { size: 13, weight: 700, color: "#ffffff", anchor: "middle" });
+  }
+  return svg;
+}
+
+function pill(label, x, y, tone) {
+  const w = width(label, 12.5, 600) + 18;
+  return `<rect x="${x - w / 2}" y="${y - 12}" width="${w}" height="24" rx="12" fill="#ffffff" stroke="${TONES[tone].stroke}" stroke-width="1.2"/>` +
+    text(label, x, y + 4.5, { size: 12.5, weight: 600, color: TONES[tone].accent, anchor: "middle" });
+}
+
+function edge(e) {
+  const tone = e.tone || "gray";
+  const d = "M" + e.points.map((point) => point.join(",")).join(" L");
+  let svg = "";
+  if (e.halo) svg += `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="10" stroke-linejoin="round"/>`;
+  svg += `<path d="${d}" fill="none" stroke="${TONES[tone].accent}" stroke-width="2.2" stroke-linejoin="round"` +
+    `${e.dashed ? ' stroke-dasharray="7 6"' : ""}${e.noArrow ? "" : ` marker-end="url(#arrow-${tone})"`}/>`;
+  if (e.label) svg += pill(e.label, e.labelAt[0], e.labelAt[1], tone);
+  return svg;
+}
+
+function zone(z) {
+  const tone = TONES[z.tone || "gray"];
+  const right = z.labelRight;
+  return `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="18" fill="${tone.tint}" fill-opacity="0.55" stroke="${tone.accent}" stroke-opacity="0.55" stroke-width="1.5" stroke-dasharray="8 6"/>` +
+    text(z.label, right ? z.x + z.w - 16 : z.x + 16, z.y + 21, { size: 12, weight: 700, color: tone.accent, spacing: 1.2, anchor: right ? "end" : "start" });
+}
+
+function chip(label, x, y, tone) {
+  const w = width(label, 13.5, 600) + 26;
+  return { w, svg: `<rect x="${x}" y="${y}" width="${w}" height="32" rx="16" fill="${TONES[tone].tint}" stroke="${TONES[tone].stroke}" stroke-width="1.2"/>` +
+    text(label, x + w / 2, y + 21, { size: 13.5, weight: 600, color: TONES[tone].accent, anchor: "middle" }) };
+}
+
+function svgFrame(w, h, body) {
+  const markers = Object.entries(TONES).map(([name, tone]) =>
+    `<marker id="arrow-${name}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${tone.accent}"/></marker>`
+  ).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
+    `<defs>${markers}<filter id="shadow" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.08"/></filter></defs>` +
+    `<rect width="${w}" height="${h}" fill="#ffffff"/>${body}</svg>`;
+}
+
+function render(id, spec) {
+  let body = (spec.zones || []).map(zone).join("");
+  body += (spec.under || []).join("");
+  body += (spec.edges || []).filter((e) => !e.halo).map(edge).join("");
+  body += (spec.nodes || []).map(node).join("");
+  body += (spec.edges || []).filter((e) => e.halo).map(edge).join("");
+  body += (spec.labels || []).join("");
+  body += (spec.over || []).join("");
+  document.getElementById(id).innerHTML = svgFrame(spec.w, spec.h, body);
+}
+
+function banner(x, y, w, h, message, tone = "navy") {
+  const fill = tone === "navy" ? "#0f172a" : TONES[tone].tint;
+  const color = tone === "navy" ? "#ffffff" : TONES[tone].accent;
+  const stroke = tone === "navy" ? "#0f172a" : TONES[tone].stroke;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${fill}" stroke="${stroke}"/>` +
+    text(message, x + w / 2, y + h / 2 + 6, { size: 16, weight: 650, color, anchor: "middle" });
+}
+
+/* 1. Solution architecture */
+render("fig-architecture", {
+  w: 1720, h: 930,
+  zones: [
+    { x: 800, y: 232, w: 670, h: 138, tone: "violet", label: "DECEPTION ZONE · NO ROUTE TO PRODUCTION" },
+    { x: 360, y: 458, w: 1350, h: 146, tone: "blue", label: "SOC CONTROL PLANE", labelRight: true },
+  ],
+  labels: [
+    text("EXTERNAL TRAFFIC", 40, 132, { size: 12, weight: 700, color: "#64748b", spacing: 1.2 }),
+    text("INTERNAL AGENT TRAFFIC", 40, 684, { size: 12, weight: 700, color: "#64748b", spacing: 1.2 }),
+  ],
+  nodes: [
+    { x: 40, y: 150, w: 250, h: 96, tone: "gray", title: "External users,\nbots & AI agents", sub: "untrusted callers" },
+    { x: 380, y: 150, w: 280, h: 96, tone: "blue", filled: true, title: "L7 ingress", sub: "authenticate · authorize · route" },
+    { x: 820, y: 40, w: 290, h: 74, tone: "green", title: "Protected application", sub: "allowed requests" },
+    { x: 820, y: 134, w: 290, h: 74, tone: "red", title: "Reject access", sub: "denied requests" },
+    { x: 820, y: 262, w: 290, h: 90, tone: "violet", filled: true, title: "Isolated synthetic honeypot", sub: "eligible restricted sessions" },
+    { x: 1180, y: 262, w: 270, h: 90, tone: "violet", filled: true, title: "Decoy telemetry collector", sub: "authenticated events only" },
+    { x: 380, y: 484, w: 280, h: 96, tone: "blue", filled: true, title: "Authenticated\nsecurity events", sub: "tenant-bound · durable outbox" },
+    { x: 820, y: 484, w: 290, h: 96, tone: "blue", filled: true, title: "SOC correlation +\nGemini investigation", sub: "rules D-001…D-006 · AI explains" },
+    { x: 1180, y: 484, w: 270, h: 96, tone: "amber", filled: true, title: "Deterministic\nresponse controller", sub: "restrict before diversion" },
+    { x: 1490, y: 484, w: 210, h: 96, tone: "blue", filled: true, title: "Analyst console", sub: "evidence timeline\napprovals · Telegram" },
+    { x: 40, y: 700, w: 250, h: 96, tone: "gray", title: "Internal AI agents", sub: "company workloads" },
+    { x: 380, y: 700, w: 280, h: 96, tone: "blue", filled: true, title: "L7 tool & resource\nenforcement", sub: "MCP tools · resources · actions" },
+    { x: 820, y: 700, w: 290, h: 96, tone: "gray", title: "Existing gateway", sub: "certificate identity + destination\npermissions (HTTP/2 CONNECT)" },
+    { x: 1180, y: 700, w: 270, h: 96, tone: "green", title: "Approved backend services", sub: "production systems" },
+  ],
+  edges: [
+    { points: [[290, 198], [380, 198]] },
+    { points: [[660, 175], [720, 175], [720, 77], [820, 77]], tone: "green" },
+    { points: [[660, 198], [740, 198], [740, 171], [820, 171]], tone: "red" },
+    { points: [[660, 222], [760, 222], [760, 307], [820, 307]], tone: "violet" },
+    { points: [[1110, 307], [1180, 307]], tone: "violet" },
+    { points: [[520, 246], [520, 484]], tone: "blue", dashed: true, label: "decisions & events", labelAt: [520, 350] },
+    { points: [[520, 700], [520, 580]], tone: "blue", dashed: true, label: "tool decisions", labelAt: [520, 640] },
+    { points: [[1315, 352], [1315, 392], [1080, 392], [1080, 484]], tone: "violet", dashed: true, label: "decoy telemetry", labelAt: [1200, 392] },
+    { points: [[660, 532], [820, 532]], tone: "blue" },
+    { points: [[1110, 532], [1180, 532]], tone: "blue" },
+    { points: [[1450, 532], [1490, 532]], tone: "blue" },
+    { points: [[1230, 484], [1230, 428], [600, 428], [600, 246]], tone: "amber", dashed: true, halo: true, label: "restrict or pin eligible session", labelAt: [830, 428] },
+    { points: [[1230, 580], [1230, 644], [600, 644], [600, 700]], tone: "amber", dashed: true, label: "restrict or pin session", labelAt: [915, 644] },
+    { points: [[290, 748], [380, 748]] },
+    { points: [[660, 748], [820, 748]], label: "authorized call", labelAt: [740, 748] },
+    { points: [[1110, 748], [1180, 748]], tone: "green" },
+  ],
+  over: [
+    `<rect x="40" y="842" width="26" height="18" rx="5" fill="${TONES.blue.tint}" stroke="${TONES.blue.stroke}"/>`,
+    text("Hades Mirage component", 76, 856, { size: 13.5, color: "#334155" }),
+    `<rect x="260" y="842" width="26" height="18" rx="5" fill="#ffffff" stroke="${TONES.gray.stroke}"/>`,
+    text("Existing or external system", 296, 856, { size: 13.5, color: "#334155" }),
+    `<line x1="500" y1="851" x2="540" y2="851" stroke="${TONES.amber.accent}" stroke-width="2.2" stroke-dasharray="7 6"/>`,
+    text("Control action", 550, 856, { size: 13.5, color: "#334155" }),
+    text("Layer 3/4 isolation surrounds every component: production, SOC and deception run in separate segments.", 40, 896, { size: 13.5, color: "#475569" }),
+    text("Network policies need an enforcing implementation; configuration files alone do not prove isolation.", 40, 916, { size: 13.5, color: "#475569" }),
+  ],
+});
+
+/* 2. OSI placement */
+(() => {
+  const rows = [
+    { y: 40, h: 150, tone: "blue", title: "Layer 7 · Application", tag: "PRIMARY ENFORCEMENT",
+      chips: [["HTTP / API inspection", "MCP tool authorization", "Resource permissions"], ["Behavioural signals", "Session diversion", "Simulated responses"]] },
+    { y: 210, h: 100, tone: "gray", title: "TLS & workload identity", tag: "BETWEEN L4 AND L7 (APPROXIMATE)",
+      chips: [["Workload authentication", "Certificate-bound gateway (existing)", "Encrypted transport"]] },
+    { y: 330, h: 100, tone: "teal", title: "Layer 4 · Transport", tag: "SUPPORTING",
+      chips: [["Destination IP / port restriction", "No bypass of approved paths"]] },
+    { y: 450, h: 100, tone: "teal", title: "Layer 3 · Network", tag: "SUPPORTING",
+      chips: [["Production · SOC · deception segments", "Honeypot has no route to production"]] },
+  ];
+  let body = "";
+  for (const row of rows) {
+    const tone = TONES[row.tone];
+    body += `<rect x="40" y="${row.y}" width="1210" height="${row.h}" rx="16" fill="${row.tone === "blue" ? tone.tint : "#ffffff"}" stroke="${tone.stroke}" stroke-width="1.6" filter="url(#shadow)"/>`;
+    body += `<rect x="41" y="${row.y + 16}" width="6" height="${row.h - 32}" rx="3" fill="${tone.accent}"/>`;
+    body += text(row.title, 70, row.y + row.h / 2 - 2, { size: 19, weight: 700 });
+    body += text(row.tag, 70, row.y + row.h / 2 + 22, { size: 11.5, weight: 700, color: tone.accent, spacing: 1.1 });
+    row.chips.forEach((line, index) => {
+      let x = 400;
+      const y = row.y + (row.h - row.chips.length * 32 - (row.chips.length - 1) * 14) / 2 + index * 46;
+      for (const label of line) {
+        const item = chip(label, x, y, row.tone === "gray" ? "blue" : row.tone);
+        body += item.svg;
+        x += item.w + 14;
+      }
+    });
+  }
+  body += `<rect x="1290" y="40" width="390" height="510" rx="16" fill="${TONES.violet.tint}" stroke="${TONES.violet.stroke}" stroke-width="1.6" filter="url(#shadow)"/>`;
+  body += `<rect x="1291" y="56" width="6" height="478" rx="3" fill="${TONES.violet.accent}"/>`;
+  body += text("SOC control plane", 1320, 90, { size: 19, weight: 700 });
+  body += text("AN APPLICATION SERVICE, NOT AN OSI LAYER", 1320, 114, { size: 11.5, weight: 700, color: TONES.violet.accent, spacing: 1.1 });
+  ["Receives authenticated events", "Correlates with rules D-001…D-006", "Gemini explains cases (advisory)", "Coordinates bounded responses", "Analyst console, evidence timeline", "Approvals in console or Telegram"].forEach((item, index) => {
+    body += `<circle cx="1328" cy="${160 + index * 52}" r="5" fill="${TONES.violet.accent}"/>`;
+    body += text(item, 1344, 165 + index * 52, { size: 15, color: "#1e293b" });
+  });
+  body += `<rect x="40" y="574" width="1640" height="64" rx="12" fill="${TONES.amber.tint}" stroke="${TONES.amber.stroke}"/>`;
+  body += text("The existing HTTP/2 CONNECT gateway authorizes destinations. It cannot tell whether an encrypted operation inside the tunnel is a", 60, 600, { size: 14.5, color: "#78350f" });
+  body += text("permitted supplier lookup or an unauthorized deletion, so tool and resource enforcement happens at Layer 7.", 60, 622, { size: 14.5, color: "#78350f" });
+  document.getElementById("fig-osi").innerHTML = svgFrame(1720, 660, body);
+})();
+
+/* 3. Attack journey */
+render("fig-journey", {
+  w: 1720, h: 580,
+  nodes: [
+    { x: 30, y: 60, w: 240, h: 160, tone: "gray", badge: "1", title: "Outside AI agent", sub: "connects to the company\nsupplier portal", tech: "external-lab session" },
+    { x: 310, y: 60, w: 240, h: 160, tone: "blue", badge: "2", title: "Front-door check", sub: "who is calling, which\ntool, which record?", tech: "L7 identity · tool · resource" },
+    { x: 590, y: 60, w: 240, h: 160, tone: "red", badge: "3", title: "Blocked", sub: "customer export and\nunassigned suppliers refused", tech: "authorization = deny" },
+    { x: 870, y: 60, w: 240, h: 160, tone: "amber", badge: "4", title: "Attack spotted", sub: "probing plus a forbidden\naction within 60 seconds", tech: "rule D-002 · high" },
+    { x: 1150, y: 60, w: 240, h: 160, tone: "amber", badge: "5", title: "Access limited first", sub: "no new real actions\nare accepted", tech: "RESTRICTED → DECOY_PENDING" },
+    { x: 1430, y: 60, w: 260, h: 160, tone: "violet", filled: true, badge: "6", title: "Moved to honeypot", sub: "receives realistic but\nfake synthetic answers", tech: "route DECOY · Wasm template" },
+    { x: 30, y: 330, w: 520, h: 110, tone: "blue", title: "Analysts & approvers", sub: "follow it on the live attack map and issue graph;\napprove or reject sensitive actions (console or Telegram)" },
+    { x: 590, y: 330, w: 520, h: 110, tone: "violet", filled: true, title: "Google Gemini explains the case", sub: "plain-language summary with cited evidence;\nadvisory only: it cannot block, allow or route" },
+    { x: 1150, y: 330, w: 540, h: 110, tone: "green", filled: true, title: "Real business data untouched", sub: "the independent backend ledger records 0 reads\nor changes after containment" },
+  ],
+  edges: [
+    { points: [[270, 140], [310, 140]] },
+    { points: [[550, 140], [590, 140]], tone: "red" },
+    { points: [[830, 140], [870, 140]], tone: "amber" },
+    { points: [[1110, 140], [1150, 140]], tone: "amber" },
+    { points: [[1390, 140], [1430, 140]], tone: "violet" },
+    { points: [[990, 220], [990, 330]], tone: "violet", dashed: true, label: "case opened", labelAt: [990, 275] },
+    { points: [[1560, 220], [1560, 330]], tone: "green", label: "verified by ledger", labelAt: [1560, 275] },
+    { points: [[590, 385], [550, 385]], tone: "violet" },
+  ],
+  over: [
+    banner(30, 488, 1660, 56, "Rules decide   ·   AI explains   ·   Restrict before diversion   ·   Failure never restores production access"),
+  ],
+});
+
+/* 4. Session route states */
+render("fig-states", {
+  w: 1720, h: 400,
+  nodes: [
+    { x: 30, y: 60, w: 250, h: 110, tone: "green", filled: true, title: "PRODUCTION", sub: "normal, policy-checked\naccess" },
+    { x: 380, y: 60, w: 250, h: 110, tone: "amber", filled: true, title: "RESTRICTED", sub: "real actions stopped\nbefore anything else" },
+    { x: 730, y: 60, w: 250, h: 110, tone: "amber", filled: true, title: "DECOY_PENDING", sub: "isolation readiness\nchecked" },
+    { x: 1080, y: 60, w: 250, h: 110, tone: "violet", filled: true, title: "DECOY", sub: "synthetic honeypot\nresponses only" },
+    { x: 1430, y: 60, w: 260, h: 110, tone: "gray", filled: true, title: "TERMINATED", sub: "TTL, budget, analyst\nor kill switch" },
+  ],
+  edges: [
+    { points: [[280, 115], [380, 115]], tone: "amber", label: "rule match", labelAt: [330, 88] },
+    { points: [[630, 115], [730, 115]], tone: "amber", label: "eligible", labelAt: [680, 88] },
+    { points: [[980, 115], [1080, 115]], tone: "violet", label: "verified", labelAt: [1030, 88] },
+    { points: [[1330, 115], [1430, 115]], tone: "gray", label: "ends", labelAt: [1380, 88] },
+    { points: [[155, 170], [155, 230], [1560, 230], [1560, 170]], tone: "gray", dashed: true },
+    { points: [[505, 170], [505, 230]], tone: "gray", dashed: true, noArrow: true },
+    { points: [[855, 170], [855, 230]], tone: "gray", dashed: true, noArrow: true },
+    { points: [[1205, 170], [1205, 230]], tone: "gray", dashed: true, noArrow: true },
+  ],
+  over: [
+    pill("any state can be terminated", 880, 230, "gray"),
+    banner(30, 290, 1660, 56, "One-way only: no transition returns a session to PRODUCTION. Readiness or isolation failure keeps it restricted or ends it.", "red"),
+  ],
+});
+
+/* 5. Gemini AI pipeline */
+render("fig-ai", {
+  w: 1720, h: 620,
+  labels: [
+    text("ENFORCEMENT PATH · DETERMINISTIC · NO AI", 350, 52, { size: 12, weight: 700, color: "#64748b", spacing: 1.2 }),
+    text("ADVISORY AI PATH · GOOGLE GEMINI", 350, 274, { size: 12, weight: 700, color: TONES.violet.accent, spacing: 1.2 }),
+  ],
+  under: [
+    `<line x1="30" y1="214" x2="1690" y2="214" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 6"/>`,
+  ],
+  nodes: [
+    { x: 40, y: 70, w: 250, h: 96, tone: "gray", title: "Agent request\nor tool call" },
+    { x: 350, y: 70, w: 300, h: 96, tone: "blue", filled: true, title: "Identity, policy & approvals", sub: "deny by default · exact resources" },
+    { x: 710, y: 70, w: 300, h: 96, tone: "amber", filled: true, title: "Behaviour rules", sub: "D-001…D-006 · corroborated signals" },
+    { x: 1070, y: 70, w: 300, h: 96, tone: "blue", filled: true, title: "Allow · deny · restrict · divert", sub: "durable route fence" },
+    { x: 1430, y: 70, w: 250, h: 96, tone: "green", title: "Backend or honeypot", sub: "effects recorded independently" },
+    { x: 40, y: 286, w: 250, h: 120, tone: "gray", title: "Case evidence", sub: "≤ 20 redacted observations,\ntreated as untrusted data" },
+    { x: 350, y: 286, w: 300, h: 120, tone: "blue", filled: true, title: "Bounded context builder", sub: "tenant & role checks · budgets\ncase version · request digests" },
+    { x: 710, y: 286, w: 300, h: 120, tone: "violet", filled: true, title: "Gemini (google-genai SDK)", sub: "JSON schema output · no tools\none attempt · thinking capped", tech: "gemini-2.5-flash · 3.8-flash" },
+    { x: 1070, y: 286, w: 300, h: 120, tone: "amber", filled: true, title: "Output validation", sub: "schema · cited event IDs\nsize limits · stale versions rejected" },
+    { x: 1430, y: 286, w: 250, h: 120, tone: "blue", filled: true, title: "Console answers", sub: "investigations · case Q&A\nchat · auto-review · reports" },
+    { x: 350, y: 468, w: 300, h: 100, tone: "gray", title: "Admin AI settings", sub: "model choice · egress consent\nauto-review (versioned, audited)" },
+    { x: 1070, y: 468, w: 300, h: 100, tone: "gray", title: "Server-side credentials", sub: "AI Studio key or Vertex AI service\naccount; never sent to the model" },
+  ],
+  edges: [
+    { points: [[290, 118], [350, 118]] },
+    { points: [[650, 118], [710, 118]], tone: "amber" },
+    { points: [[1010, 118], [1070, 118]], tone: "blue" },
+    { points: [[1370, 118], [1430, 118]], tone: "green" },
+    { points: [[760, 166], [760, 240], [165, 240], [165, 286]], tone: "gray", dashed: true, label: "case + events (one-way)", labelAt: [460, 240] },
+    { points: [[290, 346], [350, 346]] },
+    { points: [[650, 346], [710, 346]], tone: "violet" },
+    { points: [[1010, 346], [1070, 346]], tone: "amber" },
+    { points: [[1370, 346], [1430, 346]], tone: "blue" },
+    { points: [[650, 518], [830, 518], [830, 406]], tone: "gray", label: "selects model", labelAt: [740, 518] },
+    { points: [[1070, 518], [900, 518], [900, 406]], tone: "gray", label: "authenticates", labelAt: [985, 518] },
+  ],
+  over: [
+    pill("AI output can never change permissions, routing or approvals", 1330, 214, "red"),
+  ],
+});
+
+/* 6. Google Cloud deployment */
+render("fig-gcp", {
+  w: 1720, h: 820,
+  zones: [
+    { x: 660, y: 150, w: 560, h: 400, tone: "blue", label: "CLOUD RUN SERVICE · hades-mirage · P2-cloud" },
+  ],
+  nodes: [
+    { x: 40, y: 300, w: 250, h: 110, tone: "gray", title: "Analysts & approvers", sub: "Google Workspace\naccounts" },
+    { x: 350, y: 300, w: 250, h: 110, tone: "blue", title: "Identity-Aware Proxy", sub: "Workspace sign-in · signed\nJWT audience/domain checks" },
+    { x: 690, y: 196, w: 500, h: 96, tone: "blue", filled: true, title: "API + analyst console", sub: "python -m mirage cloud · public port $PORT" },
+    { x: 690, y: 330, w: 240, h: 116, tone: "green", filled: true, title: "Signed synthetic\nbackend", sub: "container loopback only\n127.0.0.1:8788" },
+    { x: 950, y: 330, w: 240, h: 116, tone: "violet", filled: true, title: "Wasm honeypot\ntemplate", sub: "no host imports\nsynthetic state only" },
+    { x: 1300, y: 150, w: 380, h: 96, tone: "violet", title: "Vertex AI · Gemini", sub: "service account (roles/aiplatform.user)\nadvisory calls, no API key in cloud" },
+    { x: 1300, y: 266, w: 380, h: 86, tone: "amber", title: "Secret Manager", sub: "backend HMAC secret · Telegram token" },
+    { x: 1300, y: 372, w: 380, h: 86, tone: "gray", title: "Cloud Logging", sub: "stdout / stderr of both processes" },
+    { x: 1300, y: 478, w: 380, h: 86, tone: "gray", dashed: true, title: "Telegram Bot API", sub: "polling from an always-on instance" },
+    { x: 40, y: 640, w: 250, h: 100, tone: "amber", title: "deploy\\gcp\\deploy.ps1", sub: "one command: APIs, IAM,\nsecrets, IAP and deploy" },
+    { x: 350, y: 640, w: 260, h: 100, tone: "gray", title: "Source upload", sub: "gcloud run deploy --source ." },
+    { x: 660, y: 640, w: 290, h: 100, tone: "blue", title: "Cloud Build", sub: "Google Cloud buildpacks\nno Dockerfile · no local Docker" },
+    { x: 1000, y: 640, w: 220, h: 100, tone: "blue", title: "Artifact Registry", sub: "cloud-run-source-\ndeploy repository" },
+  ],
+  edges: [
+    { points: [[290, 355], [350, 355]] },
+    { points: [[600, 355], [640, 355], [640, 244], [690, 244]], tone: "blue" },
+    { points: [[810, 292], [810, 330]], tone: "green" },
+    { points: [[1070, 292], [1070, 330]], tone: "violet" },
+    { points: [[1220, 198], [1300, 198]], tone: "violet" },
+    { points: [[1220, 309], [1300, 309]], tone: "amber" },
+    { points: [[1220, 415], [1300, 415]], tone: "gray" },
+    { points: [[1220, 521], [1300, 521]], tone: "gray", dashed: true },
+    { points: [[290, 690], [350, 690]], tone: "amber" },
+    { points: [[610, 690], [660, 690]] },
+    { points: [[950, 690], [1000, 690]], tone: "blue" },
+    { points: [[1110, 640], [1110, 550]], tone: "blue", label: "image", labelAt: [1110, 596] },
+  ],
+  over: [
+    banner(40, 40, 1640, 64, "Packaged and tested locally; not yet deployed. Live Gemini was verified through the Gemini API key on the native profile.", "amber"),
+    text("max 1 instance · scale to zero · SQLite in /tmp unless PostgreSQL is configured", 690, 500, { size: 13.5, color: "#1e3a8a" }),
+    text("IAP admits only granted Workspace users or domains; the app still requires an operator-mapped role. Roles never come from the model.", 40, 790, { size: 13.5, color: "#475569" }),
+  ],
+});
+</script>
+</body>
+</html>
